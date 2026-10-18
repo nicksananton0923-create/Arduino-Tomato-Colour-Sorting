@@ -1,0 +1,83 @@
+# Viva preparation: English + Tamil
+
+These are model answers for the proposed design. Adapt them to the actual hardware you built.
+
+## 1. What is the objective of this project?
+**English:** To demonstrate automatic tomato colour sorting using a conveyor, colour sensor, Arduino and sorting actuator.  
+**தமிழ்:** கன்வேயர் பெல்ட், நிற உணரி, Arduino மற்றும் sorting actuator பயன்படுத்தி தக்காளிகளை நிறத்தின் அடிப்படையில் தானாகப் பிரிப்பதே இந்தத் திட்டத்தின் நோக்கம்.
+
+## 2. Why did you choose Arduino Uno?
+**English:** It is inexpensive, widely supported and has enough digital, analog and I²C connections for this prototype.  
+**தமிழ்:** குறைந்த செலவு, எளிதான நிரலாக்கம் மற்றும் தேவையான I/O, I²C இணைப்புகள் இருப்பதால் Arduino Uno தேர்ந்தெடுக்கப்படுகிறது.
+
+## 3. What does the TCS34725 do?
+**English:** It measures red, green, blue and clear-channel light values from the target surface.  
+**தமிழ்:** தக்காளியிலிருந்து பிரதிபலிக்கும் சிவப்பு, பச்சை, நீலம் மற்றும் clear-channel ஒளி அளவுகளை இது அளவிடுகிறது.
+
+## 4. Does colour detection prove ripeness?
+**English:** No. Colour can be an indicator, but actual ripeness also depends on variety and other properties. Calibration and validation are required.  
+**தமிழ்:** இல்லை. நிறம் ஒரு குறியீடு மட்டுமே. தக்காளி வகை மற்றும் பிற பண்புகளும் பழுத்த நிலையைப் பாதிக்கும். எனவே calibration மற்றும் validation அவசியம்.
+
+## 5. Why is an IR presence sensor useful?
+**English:** It tells the controller when a tomato reaches the measurement point, so readings can be taken at the right time.  
+**தமிழ்:** தக்காளி அளவீட்டு இடத்தை அடைந்ததை IR sensor தெரிவிக்கிறது; அதனால் சரியான நேரத்தில் நிறத்தை அளவிடலாம்.
+
+## 6. What is the conveyor motor's function?
+**English:** It drives the belt to transport tomatoes through the sensing and sorting stations.  
+**தமிழ்:** தக்காளிகளை sensing மற்றும் sorting இடங்களுக்கு எடுத்துச் செல்ல பெல்டை இயக்குகிறது.
+
+## 7. Why is a motor driver needed?
+**English:** The Arduino pin cannot supply the motor's required current. A driver switches the higher-current motor supply.  
+**தமிழ்:** Arduino pin-ல் இருந்து மோட்டாருக்குத் தேவையான அதிக மின்னோட்டம் கிடைக்காது. Motor driver மோட்டார் மின்சாரத்தை கட்டுப்படுத்துகிறது.
+
+## 8. Why use a servo?
+**English:** A servo can move a small gate to repeatable angles for different sorting paths.  
+**தமிழ்:** சிறிய sorting gate-ஐ குறிப்பிட்ட கோணங்களுக்கு நகர்த்த servo உதவுகிறது.
+
+## 9. What is calibration?
+**English:** Calibration means collecting sensor readings from known samples and adjusting the decision thresholds for the actual setup.  
+**தமிழ்:** தெரிந்த மாதிரிகளின் sensor readings-ஐ சேகரித்து, உண்மையான அமைப்பிற்கு ஏற்ற decision threshold-களை சரிசெய்வதே calibration.
+
+## 10. Why keep lighting constant?
+**English:** The sensor measures reflected light, so changing illumination can change readings even when the tomato is the same.  
+**தமிழ்:** Sensor பிரதிபலிக்கும் ஒளியை அளவிடுவதால், வெளிச்சம் மாறினால் ஒரே தக்காளிக்கும் வேறு readings கிடைக்கலாம்.
+
+## 11. What are normalized colour ratios?
+**English:** They express each colour channel as a fraction of the combined RGB value, which can reduce some brightness variation.  
+**தமிழ்:** மொத்த RGB மதிப்பில் ஒவ்வொரு நிறத்தின் பங்கைக் காட்டும் விகிதங்களே normalized ratios. இவை சில brightness வேறுபாடுகளின் தாக்கத்தைக் குறைக்க உதவும்.
+
+## 12. Why average multiple readings?
+**English:** Averaging can reduce random measurement variation, although it cannot fix poor lighting or bad sensor placement.  
+**தமிழ்:** பல readings-ஐ சராசரியாக்குவது சீரற்ற மாறுபாட்டைக் குறைக்கலாம்; ஆனால் தவறான lighting அல்லது sensor placement-ஐ சரிசெய்யாது.
+
+## 13. How do you avoid sorting the same tomato repeatedly?
+**English:** The controller latches the detection and waits until the presence sensor remains clear for a defined interval before accepting another tomato.  
+**தமிழ்:** ஒருமுறை detection ஆனதும் controller அதை latch செய்கிறது. அடுத்த தக்காளியை ஏற்க sensor ஒரு குறிப்பிட்ட நேரம் clear நிலையில் இருக்க வேண்டும்.
+
+## 14. What is the purpose of the start and stop buttons?
+**English:** They provide basic operator control. The software stop is not a safety-rated emergency stop.  
+**தமிழ்:** இயக்குநருக்கு அடிப்படை கட்டுப்பாட்டை வழங்குகின்றன. Software stop என்பது safety-rated emergency stop அல்ல.
+
+## 15. What happens if the colour sensor is not detected?
+**English:** The program reports an initialization error and does not start the conveyor automatically.  
+**தமிழ்:** Sensor initialization பிழை Serial Monitor-ல் காட்டப்படும்; conveyor தானாகத் தொடங்காது.
+
+## 16. What can cause wrong classification?
+**English:** Variable light, sensor distance, reflections, dirt, tomato orientation, overlapping colour distributions and poor thresholds.  
+**தமிழ்:** வெளிச்ச மாற்றம், sensor தூரம், பிரதிபலிப்பு, அழுக்கு, தக்காளியின் திசை மற்றும் பொருந்தாத thresholds ஆகியவை தவறான வகைப்படுத்தலை ஏற்படுத்தலாம்.
+
+## 17. Why should the motor not connect directly to an Arduino pin?
+**English:** GPIO pins are designed for low current and can be damaged by motor current and inductive transients.  
+**தமிழ்:** Arduino GPIO pin-கள் குறைந்த மின்னோட்டத்திற்காக வடிவமைக்கப்பட்டவை. மோட்டார் மின்னோட்டம் மற்றும் transient-கள் அவற்றை சேதப்படுத்தலாம்.
+
+## 18. What is a limitation of a single servo gate?
+**English:** The gate's geometry may not reliably direct all items to three bins; mechanical design and testing are essential.  
+**தமிழ்:** ஒரே servo gate மூன்று bins-க்கும் பொருட்களை நம்பகமாக அனுப்புமா என்பது அதன் mechanical வடிவமைப்பைப் பொறுத்தது. சோதனை அவசியம்.
+
+## 19. How would you improve the project?
+**English:** Add controlled illumination, better motor control, a downstream position sensor, data logging and a larger calibration dataset.  
+**தமிழ்:** நிலையான lighting, மேம்பட்ட motor control, downstream position sensor, data logging மற்றும் பெரிய calibration dataset சேர்த்து மேம்படுத்தலாம்.
+
+## 20. Is this ready for industrial use?
+**English:** No. It is an educational prototype. Industrial use requires validated accuracy, guarded mechanics, electrical protection, hygienic design and risk assessment.  
+**தமிழ்:** இல்லை. இது கல்வி நோக்கத்திற்கான prototype. தொழிற்துறை பயன்பாட்டிற்கு சரிபார்க்கப்பட்ட துல்லியம், பாதுகாப்பு அமைப்பு, மின்பாதுகாப்பு, சுத்தம் செய்யக்கூடிய வடிவமைப்பு மற்றும் risk assessment தேவை.
