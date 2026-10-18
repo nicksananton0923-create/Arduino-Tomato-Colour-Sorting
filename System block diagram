@@ -1,0 +1,34 @@
+# System block diagram
+
+**Status:** Proposed architecture; not a verified diagram of the original hardware.
+
+```mermaid
+flowchart TD
+    P[Motor-rated DC supply] --> MD[L298N motor driver]
+    MD --> M[DC geared motor]
+    M --> B[Conveyor belt]
+    B --> T[Tomato at sensing station]
+    T --> IR[IR presence sensor]
+    T --> CS[TCS34725 colour sensor]
+    IR --> A[Arduino Uno R3]
+    CS --> A
+    START[Start button] --> A
+    STOP[Stop button] --> A
+    A --> MD
+    A --> SV[Servo sorting gate]
+    A --> LED[Status LEDs]
+    LOGIC[Regulated logic supply] --> A
+    LOGIC --> CS
+    LOGIC --> IR
+    SERVO_PWR[Suitable regulated servo supply] --> SV
+    G1[Green tomato bin]
+    G2[Partially ripe bin]
+    G3[Red tomato bin]
+    SV --> G1
+    SV --> G2
+    SV --> G3
+```
+
+## Operation summary
+
+The presence sensor indicates that a tomato has reached the sensing station. The Arduino pauses the belt, samples the colour sensor, classifies the measured colour, positions the gate and then resumes the belt after the sensor clears. Mechanical layout must ensure the gate can actually guide the tomato into each bin.
