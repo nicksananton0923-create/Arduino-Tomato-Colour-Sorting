@@ -1,0 +1,51 @@
+# Components, functions and connection notes
+
+**Inventory status:** All items below are proposed candidate components, not confirmed original parts.
+
+## Recommended student-prototype configuration
+
+| Item | Qty. | Essential? | Purpose / selection notes |
+|---|---:|---|---|
+| Arduino Uno R3 | 1 | Yes | Familiar 5 V controller; sufficient pins for this basic prototype |
+| TCS34725 colour sensor breakout | 1 | Yes | RGB measurement over I²C; choose a breakout compatible with the intended supply and logic levels |
+| Digital IR presence sensor | 1 | Recommended | Detects tomato at sensing point; verify active output logic |
+| DC geared motor | 1 | Yes | Drives belt; choose torque/speed for the load |
+| Conveyor belt and frame | 1 | Yes | Mechanical transport |
+| Motor driver | 1 | Yes | Must handle motor voltage and stall current; L298N is a common educational option but inefficient |
+| SG90 micro servo | 1 | For lightweight gate only | Moves a small diverter; use a stronger servo/actuator if required by mechanical load |
+| Start push button | 1 | Recommended | Operator start input |
+| Stop push button | 1 | Recommended | Software stop input; not a safety-rated emergency stop |
+| Green LED + 220–330 Ω resistor | 1 each | Optional | Running indicator |
+| Red LED + 220–330 Ω resistor | 1 each | Optional | Stop/alarm indicator |
+| Motor-rated DC supply | 1 | Yes | Must match motor voltage and current |
+| Regulated servo supply | 1 | Recommended | Sized for servo peak current; ground referenced to controller |
+| Regulated logic supply / USB | 1 | Yes | Stable power for Arduino and compatible sensor modules |
+| Jumper wires / connectors | As needed | Yes | Signal wiring |
+| Breadboard | 1 | Optional | Low-current prototype signals only; not for motor current |
+| Mechanical brackets, fasteners and three bins | As needed | Yes | Sensor and gate mounting, collection |
+| Fuse / overcurrent protection | As designed | Strongly recommended | Protects wiring and supply branches |
+| Physical power disconnect / emergency-stop hardware | As designed | Strongly recommended | Provides a hardware means to remove drive power |
+
+## Pin summary
+
+- D2: IR output
+- D3: Start button to GND (`INPUT_PULLUP`)
+- D4: Stop button to GND (`INPUT_PULLUP`)
+- D5: L298N ENA PWM
+- D7: L298N IN1
+- D8: L298N IN2
+- D9: Servo signal
+- D10: Green LED through resistor
+- D11: Red LED through resistor
+- A4: TCS34725 SDA
+- A5: TCS34725 SCL
+
+## Electrical compatibility checklist
+
+- Confirm the colour sensor breakout voltage and I²C logic requirements.
+- Confirm the IR module output voltage is safe for the Arduino input.
+- Confirm motor driver current rating against motor stall current, not only free-running current.
+- Do not power the motor or servo from GPIO pins.
+- Do not route motor current through a breadboard.
+- Ensure all signal devices have a common reference ground where needed.
+- Test the supply voltage under load before connecting the Arduino.
