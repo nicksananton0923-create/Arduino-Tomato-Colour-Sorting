@@ -1,0 +1,374 @@
+/*
+  Project: Arduino-Based Smart Conveyor Belt for Tomato Colour Detection
+           and Automatic Sorting
+  Status: Proposed educational starter code; hardware not physically verified.
+
+  Proposed hardware:
+  - Arduino Uno R3
+  - TCS34725 colour sensor (I2C)
+  - Digital IR presence sensor (assumes LOW = object detected)
+  - L298N motor driver and DC geared motor
+  - SG90 servo on a lightweight sorting gate
+  - Start and Stop push buttons (INPUT_PULLUP)
+  - Red and green LEDs with series resistors
+
+  Required library:
+  - Adafruit TCS34725
+  - Adafruit BusIO dependency
+  - Servo and Wire are included with the Arduino AVR board package
+
+  SAFETY:
+  - Do not use this educational sketch as a production safety controller.
+  - Provide a physical motor power disconnect; software stop is not safety-rated.
+  - Never power a motor or servo from an Arduino GPIO pin.
+  - Tune category thresholds using real samples and fixed illumination.
+*/
+
+#include <Wire.h>
+#include <Adafruit_TCS34725.h>
+#include <Servo.h>
+
+// ---------- Pin assignments ----------
+const byte IR_PIN       = 2;   // IR output; assumed active LOW
+const byte START_PIN    = 3;   // button to GND
+const byte STOP_PIN     = 4;   // button to GND
+const byte MOTOR_EN     = 5;   // L298N ENA; PWM, remove ENA jumper if needed
+const byte MOTOR_IN1    = 7;
+const byte MOTOR_IN2    = 8;
+const byte SERVO_PIN    = 9;
+const byte GREEN_LED    = 10;
+const byte RED_LED      = 11;
+
+// ---------- Mechanical tuning ----------
+const byte MOTOR_PWM = 160;  // 0..255; tune to the motor and belt
+const int SERVO_GREEN_ANGLE = 35;
+const int SERVO_PARTIAL_ANGLE = 90;
+const int SERVO_RED_ANGLE = 145;
+const int SERVO_NEUTRAL_ANGLE = 90;
+
+// ---------- Timing ----------
+const unsigned long SENSOR_CLEAR_MS = 150;
+const unsigned long SERVO_SETTLE_MS = 500;
+const unsigned long GATE_HOLD_MS = 700;
+const unsigned long DEBOUNCE_MS = 35;
+
+// ---------- Classification starting points only ----------
+// These ratios are examples, not universal tomato-ripeness limits.
+// Calibrate with your sensor, distance, illumination, and tomato samples.
+const float GREEN_G_RATIO_MIN = 0.38;
+const float GREEN_OVER_RED_MIN = 1.15;
+const float RED_R_RATIO_MIN = 0.40;
+const float RED_OVER_GREEN_MIN = 1.20;
+
+// Gain/integration settings can affect measurements; validate for your setup.
+Adafruit_TCS34725 colourSensor(
+  TCS34725_INTEGRATIONTIME_50MS,
+  TCS34725_GAIN_4X
+);
+Servo sortingServo;
+
+enum TomatoClass {
+  CLASS_UNKNOWN,
+  CLASS_GREEN,
+  CLASS_PARTIAL,
+  CLASS_RED
+};
+
+enum State {
+  IDLE,
+  RUNNING,
+  MEASURING,
+  MOVING_GATE,
+  HOLDING_GATE,
+  WAIT_FOR_CLEAR,
+  STOPPED
+};
+
+State state = IDLE;
+TomatoClass lastClass = CLASS_UNKNOWN;
+unsigned long stateStarted = 0;
+unsigned long clearStarted = 0;
+bool clearTimerRunning = false;
+bool sensorReady = false;
+
+bool previousStartReading = HIGH;
+bool stableStartReading = HIGH;
+unsigned long startChangedAt = 0;
+
+struct ColourReading {
+  uint16_t r;
+  uint16_t g;
+  uint16_t b;
+  uint16_t c;
+  float rRatio;
+  float gRatio;
+  float bRatio;
+};
+
+bool tomatoPresent() {
+  // Change this logic if your sensor output is active HIGH.
+  return digitalRead(IR_PIN) == LOW;
+}
+
+void setMotor(bool on) {
+  if (on && state != STOPPED) {
+    digitalWrite(MOTOR_IN1, HIGH);
+    digitalWrite(MOTOR_IN2, LOW);
+    analogWrite(MOTOR_EN, MOTOR_PWM);
+  } else {
+    analogWrite(MOTOR_EN, 0);
+    digitalWrite(MOTOR_IN1, LOW);
+    digitalWrite(MOTOR_IN2, LOW);
+  }
+}
+
+void stopEverything() {
+  analogWrite(MOTOR_EN, 0);
+  digitalWrite(MOTOR_IN1, LOW);
+  digitalWrite(MOTOR_IN2, LOW);
+  digitalWrite(GREEN_LED, LOW);
+  digitalWrite(RED_LED, HIGH);
+  sortingServo.write(SERVO_NEUTRAL_ANGLE);
+  state = STOPPED;
+  stateStarted = millis();
+  Serial.println(F("STOP: conveyor output disabled. Physical power disconnect is still required for safety."));
+}
+
+bool startPressedEvent() {
+  bool reading = digitalRead(START_PIN);
+  if (reading != previousStartReading) {
+    startChangedAt = millis();
+    previousStartReading = reading;
+  }
+
+  if ((millis() - startChangedAt) >= DEBOUNCE_MS &&
+      reading != stableStartReading) {
+    stableStartReading = reading;
+    if (stableStartReading == LOW) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool readColour(ColourReading &out) {
+  // Average 5 samples to reduce random variation.
+  const byte samples = 5;
+  uint32_t sumR = 0, sumG = 0, sumB = 0, sumC = 0;
+
+  for (byte i = 0; i < samples; i++) {
+    uint16_t r, g, b, c;
+    colourSensor.getRawData(&r, &g, &b, &c);
+    sumR += r;
+    sumG += g;
+    sumB += b;
+    sumC += c;
+    delay(55); // short sampling delay; motor is stopped during measurement
+  }
+
+  out.r = sumR / samples;
+  out.g = sumG / samples;
+  out.b = sumB / samples;
+  out.c = sumC / samples;
+
+  uint32_t total = (uint32_t)out.r + out.g + out.b;
+  if (total == 0 || out.c == 0) {
+    out.rRatio = out.gRatio = out.bRatio = 0.0;
+    return false;
+  }
+
+  out.rRatio = (float)out.r / (float)total;
+  out.gRatio = (float)out.g / (float)total;
+  out.bRatio = (float)out.b / (float)total;
+  return true;
+}
+
+TomatoClass classifyColour(const ColourReading &v) {
+  if (v.r == 0 && v.g == 0 && v.b == 0) {
+    return CLASS_UNKNOWN;
+  }
+
+  if (v.gRatio >= GREEN_G_RATIO_MIN &&
+      ((float)v.g >= (float)v.r * GREEN_OVER_RED_MIN)) {
+    return CLASS_GREEN;
+  }
+
+  if (v.rRatio >= RED_R_RATIO_MIN &&
+      ((float)v.r >= (float)v.g * RED_OVER_GREEN_MIN)) {
+    return CLASS_RED;
+  }
+
+  return CLASS_PARTIAL;
+}
+
+const __FlashStringHelper* className(TomatoClass c) {
+  switch (c) {
+    case CLASS_GREEN: return F("GREEN");
+    case CLASS_PARTIAL: return F("PARTIALLY RIPE / MIXED");
+    case CLASS_RED: return F("RED");
+    default: return F("UNKNOWN");
+  }
+}
+
+int targetAngle(TomatoClass c) {
+  switch (c) {
+    case CLASS_GREEN: return SERVO_GREEN_ANGLE;
+    case CLASS_PARTIAL: return SERVO_PARTIAL_ANGLE;
+    case CLASS_RED: return SERVO_RED_ANGLE;
+    default: return SERVO_NEUTRAL_ANGLE;
+  }
+}
+
+void printReading(const ColourReading &v, TomatoClass c) {
+  Serial.print(F("Raw R=")); Serial.print(v.r);
+  Serial.print(F(" G=")); Serial.print(v.g);
+  Serial.print(F(" B=")); Serial.print(v.b);
+  Serial.print(F(" C=")); Serial.print(v.c);
+  Serial.print(F(" | Ratios R=")); Serial.print(v.rRatio, 3);
+  Serial.print(F(" G=")); Serial.print(v.gRatio, 3);
+  Serial.print(F(" B=")); Serial.print(v.bRatio, 3);
+  Serial.print(F(" | Class=")); Serial.println(className(c));
+}
+
+void beginSortingCycle() {
+  state = MEASURING;
+  stateStarted = millis();
+  setMotor(false);
+  digitalWrite(GREEN_LED, LOW);
+  digitalWrite(RED_LED, LOW);
+  Serial.println(F("Tomato detected. Conveyor paused for colour measurement."));
+}
+
+void setup() {
+  pinMode(IR_PIN, INPUT_PULLUP);
+  pinMode(START_PIN, INPUT_PULLUP);
+  pinMode(STOP_PIN, INPUT_PULLUP);
+
+  pinMode(MOTOR_EN, OUTPUT);
+  pinMode(MOTOR_IN1, OUTPUT);
+  pinMode(MOTOR_IN2, OUTPUT);
+  pinMode(GREEN_LED, OUTPUT);
+  pinMode(RED_LED, OUTPUT);
+
+  Serial.begin(9600);
+  sortingServo.attach(SERVO_PIN);
+  sortingServo.write(SERVO_NEUTRAL_ANGLE);
+  setMotor(false);
+  digitalWrite(RED_LED, LOW);
+  digitalWrite(GREEN_LED, LOW);
+
+  sensorReady = colourSensor.begin();
+  if (!sensorReady) {
+    Serial.println(F("ERROR: TCS34725 not found. Check VCC, GND, SDA=A4, SCL=A5."));
+    digitalWrite(RED_LED, HIGH);
+    state = IDLE;
+  } else {
+    Serial.println(F("TCS34725 initialized. Proposed tomato sorter ready."));
+    Serial.println(F("Open Serial Monitor at 9600 baud. Thresholds require calibration."));
+    state = IDLE;
+  }
+}
+
+void loop() {
+  // Stop button is checked first on every pass.
+  if (digitalRead(STOP_PIN) == LOW) {
+    if (state != STOPPED) stopEverything();
+    return;
+  }
+
+  // A start event resets STOPPED/IDLE to a running state.
+  if (startPressedEvent() && sensorReady &&
+      (state == IDLE || state == STOPPED)) {
+    state = RUNNING;
+    stateStarted = millis();
+    digitalWrite(RED_LED, LOW);
+    digitalWrite(GREEN_LED, HIGH);
+    setMotor(true);
+    Serial.println(F("Conveyor STARTED."));
+  }
+
+  switch (state) {
+    case IDLE:
+      setMotor(false);
+      digitalWrite(GREEN_LED, LOW);
+      break;
+
+    case STOPPED:
+      setMotor(false);
+      digitalWrite(GREEN_LED, LOW);
+      break;
+
+    case RUNNING:
+      setMotor(true);
+      digitalWrite(GREEN_LED, HIGH);
+      if (tomatoPresent()) {
+        beginSortingCycle();
+      }
+      break;
+
+    case MEASURING: {
+      ColourReading reading;
+      bool valid = readColour(reading);
+      if (!valid) {
+        lastClass = CLASS_UNKNOWN;
+        Serial.println(F("WARNING: invalid/dark colour reading. Gate will remain neutral."));
+      } else {
+        lastClass = classifyColour(reading);
+        printReading(reading, lastClass);
+      }
+
+      if (lastClass == CLASS_UNKNOWN) {
+        sortingServo.write(SERVO_NEUTRAL_ANGLE);
+        digitalWrite(RED_LED, HIGH);
+        state = WAIT_FOR_CLEAR;
+        stateStarted = millis();
+        clearTimerRunning = false;
+      } else {
+        sortingServo.write(targetAngle(lastClass));
+        state = MOVING_GATE;
+        stateStarted = millis();
+        Serial.print(F("Servo target angle: "));
+        Serial.println(targetAngle(lastClass));
+      }
+      break;
+    }
+
+    case MOVING_GATE:
+      if (millis() - stateStarted >= SERVO_SETTLE_MS) {
+        state = HOLDING_GATE;
+        stateStarted = millis();
+      }
+      break;
+
+    case HOLDING_GATE:
+      if (millis() - stateStarted >= GATE_HOLD_MS) {
+        sortingServo.write(SERVO_NEUTRAL_ANGLE);
+        state = WAIT_FOR_CLEAR;
+        stateStarted = millis();
+        clearTimerRunning = false;
+      }
+      break;
+
+    case WAIT_FOR_CLEAR:
+      // Prevent the same tomato from being classified repeatedly.
+      // The sensor must report clear continuously before re-arming.
+      if (!tomatoPresent()) {
+        if (!clearTimerRunning) {
+          clearStarted = millis();
+          clearTimerRunning = true;
+        }
+        if (millis() - clearStarted >= SENSOR_CLEAR_MS) {
+          state = RUNNING;
+          stateStarted = millis();
+          clearTimerRunning = false;
+          digitalWrite(RED_LED, LOW);
+          digitalWrite(GREEN_LED, HIGH);
+          setMotor(true);
+          Serial.println(F("Sensor clear. Conveyor resumed; ready for next tomato."));
+        }
+      } else {
+        clearTimerRunning = false;
+      }
+      break;
+  }
+}
