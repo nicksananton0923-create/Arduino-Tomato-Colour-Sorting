@@ -1,0 +1,52 @@
+START
+  |
+  v
+Initialize all components
+  |
+  v
+Wait for START button
+  |
+  v
+Run conveyor motor
+  |
+  v
+Tomato detected?
+  | No
+  +--------------------> Continue monitoring
+  |
+ Yes
+  |
+  v
+Read colour sensor
+  |
+  v
+Are readings valid?
+  | No
+  +--------------------> Record fault / handle safely
+  |
+ Yes
+  |
+  v
+Classify tomato colour
+  |
+  +---- Green ------> Save GREEN result
+  |
+  +---- Partial ----> Save PARTIAL result
+  |
+  +---- Red --------> Save RED result
+  |
+  +---- Uncertain --> Save UNKNOWN result
+  |
+  v
+Track tomato to sorting point
+  |
+  v
+Move diverter to selected bin
+  |
+  v
+Confirm or allow tomato to pass
+  |
+  v
+Reset tracking record
+  |
+  +--------------------> Process next tomato
