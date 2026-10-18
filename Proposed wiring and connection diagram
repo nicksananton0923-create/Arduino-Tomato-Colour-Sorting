@@ -1,0 +1,54 @@
+# Proposed wiring and connection diagram
+
+**This is a proposed implementation. It does not represent confirmed original wiring. Verify the exact module pin labels and datasheets before connecting power.**
+
+## Signal connections
+
+| Device | Module pin | Arduino Uno pin | Power / ground | Notes |
+|---|---|---|---|---|
+| TCS34725 breakout | SDA | A4 | VCC to supported supply; GND to common logic ground | I²C data |
+| TCS34725 breakout | SCL | A5 | Same as above | I²C clock |
+| Digital IR sensor | OUT | D2 | VCC to module-rated supply; GND common | Code assumes LOW = detected; change if opposite |
+| Start button | One terminal | D3 | Other terminal to GND | Uses `INPUT_PULLUP` |
+| Stop button | One terminal | D4 | Other terminal to GND | Software stop only, not a safety-rated emergency stop |
+| L298N | ENA | D5 | Driver motor supply per module; GND common | Remove ENA jumper if PWM control is needed |
+| L298N | IN1 | D7 | Same driver supply arrangement | Direction input |
+| L298N | IN2 | D8 | Same driver supply arrangement | Direction input |
+| SG90 servo | Signal | D9 | Servo power from suitable regulated supply; GND common | Do not power servo from Arduino GPIO |
+| Green LED | Anode via 220–330 Ω resistor | D10 | Cathode to GND | Current-limiting resistor required |
+| Red LED | Anode via 220–330 Ω resistor | D11 | Cathode to GND | Current-limiting resistor required |
+| DC motor | Motor terminals | L298N OUT1/OUT2 | Motor supply to driver motor input | Never connect motor directly to Arduino pins |
+
+## Power notes
+
+1. Use a motor supply matching the motor voltage and stall current; verify the driver's current and thermal ratings.
+2. Use a regulated supply for the servo sized for its peak current. Small servos can draw large transient currents.
+3. The colour sensor and IR module must be powered at voltages compatible with their exact breakout boards.
+4. Connect grounds together for the Arduino, sensor modules, motor driver logic and servo supply where required for signal reference. Keep high motor current out of small signal ground paths.
+5. Do not feed an external 5 V supply into the Arduino 5V pin while USB is connected unless the power arrangement is designed to prevent backfeeding. Prefer a documented power plan.
+6. Add suitable fuse/overcurrent protection to motor and supply branches.
+7. A software button cannot replace a physical, appropriately rated motor power disconnect or safety-rated emergency stop.
+
+## Simplified connection view
+
+```text
+TCS34725 SDA ───────── Arduino A4
+TCS34725 SCL ───────── Arduino A5
+IR sensor OUT ──────── Arduino D2
+Start button ───────── Arduino D3 ── button to GND
+Stop button ────────── Arduino D4 ── button to GND
+Arduino D5/D7/D8 ───── L298N ENA/IN1/IN2
+L298N OUT1/OUT2 ────── DC motor
+Arduino D9 ─────────── Servo signal
+Arduino D10 ─ resistor ─ green LED ─ GND
+Arduino D11 ─ resistor ─ red LED ─── GND
+
+Motor supply ───────── L298N motor power input
+Regulated logic supply ─ Arduino / sensors as compatible
+Regulated servo supply ─ servo V+
+All signal grounds ─── common reference ground
+```
+
+## Important mechanical note
+
+The example program stops the conveyor while colour is measured. This reduces motion blur and simplifies the prototype. The servo angles and gate geometry are examples only; mechanically test the gate with lightweight dummy objects before using tomatoes.
