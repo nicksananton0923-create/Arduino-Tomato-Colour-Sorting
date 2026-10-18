@@ -1,0 +1,50 @@
+## ⚙️ Working Principle and Control Logic
+
+### 1. System Initialization
+When the system is powered ON, the Arduino initializes the colour sensor, tomato detection sensor, conveyor motor driver, sorting servo, and indicator LEDs. It checks whether the required sensors respond correctly and waits for the operator to press the START button.
+
+### 2. Conveyor Belt Operation
+After START is pressed, the Arduino activates the conveyor motor through a compatible motor driver. The conveyor transports tomatoes towards the colour detection station.
+
+### 3. Tomato Detection
+A presence sensor detects when a tomato reaches the measurement position. The Arduino records the detection event to prevent the same tomato from being processed repeatedly.
+
+### 4. Colour Measurement
+The Arduino obtains colour measurements from the colour sensor. Depending on the sensor, these measurements may include red, green, blue, and clear-light values. Multiple readings can be averaged to reduce noise.
+
+### 5. Colour Classification
+The Arduino compares the calibrated measurements with the experimentally determined classification rules.
+
+- **Green Tomato:** Classified as the green category.
+- **Partially Ripe Tomato:** Classified as the partially ripe category.
+- **Red Tomato:** Classified as the red category.
+- **Uncertain Reading:** Marked as unknown if the measurement is unreliable or does not match a calibrated category.
+
+The thresholds must be calibrated using real tomatoes under consistent lighting conditions.
+
+### 6. Tomato Position Tracking
+The Arduino stores the classification result for each detected tomato. Because the sorting mechanism is located downstream from the colour sensor, the controller must track when that tomato reaches the diverter.
+
+For a simple student prototype, process one tomato at a time and maintain a suitable gap between tomatoes. Estimate the travel time using the conveyor speed and the distance between the sensor and the sorting mechanism.
+
+### 7. Automatic Sorting
+When the classified tomato reaches the sorting point, the Arduino commands the servo-operated diverter to the corresponding position.
+
+- Green category → Bin 1
+- Partially ripe category → Bin 2
+- Red category → Bin 3
+
+The actual servo positions and mechanical arrangement must be calibrated to match the physical sorting mechanism.
+
+### 8. Reset and Repeat
+After the tomato passes the sorting mechanism, the controller clears that tomato's tracking record and returns the diverter to its default position. The system then continues processing the next tomato.
+
+### 9. Stop and Fault Handling
+When STOP is pressed, the controller stops normal conveyor operation and prevents further sorting commands. If a required sensor fails or gives an invalid reading, the system should stop or enter a defined fault state rather than making an unreliable sorting decision.
+
+A separate, appropriately designed emergency-stop circuit should be used where required; an Arduino software STOP command alone is not a safety-rated emergency stop.
+
+### Control Logic Summary
+
+`INITIALIZE → WAIT FOR START → RUN CONVEYOR → DETECT TOMATO → MEASURE COLOUR → CLASSIFY → TRACK POSITION → SORT → RESET → REPEAT`
+
