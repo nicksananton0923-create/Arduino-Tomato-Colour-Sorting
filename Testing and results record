@@ -1,0 +1,52 @@
+# Testing and results record
+
+**Do not fill in assumed results. Record only measurements observed on the actual prototype.**
+
+Project version: ____________________  
+Date: ____________________  
+Tested by: ____________________  
+Arduino board: ____________________  
+Colour sensor breakout: ____________________  
+Motor and driver ratings: ____________________  
+Lighting / sensor distance: ____________________
+
+## Functional test checklist
+
+| Test ID | Test | Procedure | Expected result | Actual result / measurement | Pass/Fail | Notes |
+|---|---|---|---|---|---|---|
+| T01 | Sensor initialization | Power on and read Serial Monitor | Sensor detected, no init error | | | |
+| T02 | Green sample | Measure labelled green tomatoes | Readings logged; class based on calibrated thresholds | | | |
+| T03 | Partially ripe sample | Measure labelled partially ripe tomatoes | Readings logged; class based on calibrated thresholds | | | |
+| T04 | Red sample | Measure labelled red tomatoes | Readings logged; class based on calibrated thresholds | | | |
+| T05 | Start button | Press Start | Conveyor starts | | | |
+| T06 | Stop button | Press Stop | Motor command stops | | | |
+| T07 | Sorting gate | Command each class with dummy object | Gate reaches intended position | | | |
+| T08 | Duplicate detection | Keep object at sensor | One classification until sensor clears | | | |
+| T09 | Sensor clear | Remove object | System re-arms after clear interval | | | |
+| T10 | Lighting variation | Repeat readings under changed light | Variation documented; thresholds evaluated | | | |
+| T11 | Power stability | Observe voltage during motor/servo movement | No reset or unstable behavior | | | |
+| T12 | Physical disconnect | Operate the designed drive-power disconnect | Drive power is removed | | | |
+
+## Sorting accuracy dataset
+
+| Trial | Sample ID | Visual category | Predicted category | Correct? | Notes |
+|---:|---|---|---|---|---|
+| 1 | | | | | |
+| 2 | | | | | |
+| 3 | | | | | |
+| 4 | | | | | |
+| 5 | | | | | |
+
+Accuracy can be reported as: correct classifications ÷ total valid trials × 100%. Report the sample size and test conditions alongside any percentage.
+
+## Fault log
+
+| Date/time | Symptom | Suspected cause | Action taken | Verified outcome |
+|---|---|---|---|---|
+| | | | | |
+
+## Sign-off
+
+Tested on physical hardware: Yes / No  
+If yes, list the verified configuration: ____________________  
+Known limitations: ____________________
