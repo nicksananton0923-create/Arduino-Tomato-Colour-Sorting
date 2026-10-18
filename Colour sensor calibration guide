@@ -1,0 +1,45 @@
+# Colour sensor calibration guide
+
+## Purpose
+
+The TCS34725 measures reflected red, green and blue light plus a clear-channel value. These readings describe the sensor's response to the surface and illumination. They do not directly measure internal sugar content or biological ripeness.
+
+## Standardize the setup
+
+1. Secure the sensor at a fixed distance from the tomato.
+2. Shield the sensing area from changing ambient light.
+3. Use consistent illumination. A fixed white LED source can improve repeatability.
+4. Avoid sensor saturation and very dark readings.
+5. Clean the sensor window and avoid strong reflections.
+6. Keep tomato orientation and measurement position as consistent as practical.
+
+## Record samples
+
+For each sample, record raw R, G, B, C and normalized ratios:
+- `rRatio = R / (R + G + B)`
+- `gRatio = G / (R + G + B)`
+- `bRatio = B / (R + G + B)`
+
+Collect multiple readings for several tomatoes in each visually labelled group: green, partially ripe, and red. Record sample IDs and lighting conditions.
+
+## Choose thresholds
+
+The source code contains example starting points:
+- `GREEN_G_RATIO_MIN = 0.38`
+- `GREEN_OVER_RED_MIN = 1.15`
+- `RED_R_RATIO_MIN = 0.40`
+- `RED_OVER_GREEN_MIN = 1.20`
+
+These values are **not validated standards** and may be wrong for your sensor and tomatoes. Replace them after collecting data. A simple threshold classifier may not separate all varieties and ripeness stages reliably. If groups overlap, improve illumination, sensor geometry, collect more samples, or use a more robust classification method.
+
+## Validate
+
+Use a separate set of tomatoes not used to set the thresholds. Build a confusion matrix and calculate accuracy only after real trials. Record false classifications, unknown readings and repeatability.
+
+## Example data sheet
+
+| Sample ID | Visual label | R | G | B | C | rRatio | gRatio | Predicted label | Correct? | Notes |
+|---|---|---:|---:|---:|---:|---:|---:|---|---|---|
+| T001 | Green | | | | | | | | | |
+| T002 | Partially ripe | | | | | | | | | |
+| T003 | Red | | | | | | | | | |
