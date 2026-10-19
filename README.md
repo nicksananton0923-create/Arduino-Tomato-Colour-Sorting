@@ -90,19 +90,19 @@ Current example settings:
 
 These values are **not validated for all tomato varieties, sensor distances, or lighting conditions**. Colour measurements describe reflected light, not internal sugar content or biological ripeness.
 
-Follow the existing [colour sensor calibration guide](<Colour sensor calibration guide>) to standardize the sensor distance and illumination, collect labelled samples, tune thresholds, and validate them on separate samples.
+Follow the existing [colour sensor calibration guide](Colour%20sensor%20calibration%20guide) to standardize the sensor distance and illumination, collect labelled samples, tune thresholds, and validate them on separate samples.
 
  📚 Existing Project Documentation
 
 - [Bill of materials spreadsheet](<Bill_of_materials.xlsx>)
-- [Components, functions, and connection notes](<Components, functions and connection notes>)
-- [Control logic](<Control Logic>)
-- [Proposed wiring and connection diagram](<Proposed wiring and connection diagram>)
-- [System block diagram](<System block diagram>)
-- [Testing and results record](<Testing and results record>)
-- [Operation notes](<How to work>)
-- [Questions and answers](<Question and Answers>)
-- [Conveyor connection image](<Conveyer  connection.jpg>)
+- [Components, functions, and connection notes](Components%2C%20functions%20and%20connection%20notes)
+- [Control logic](Control%20Logic)
+- [Proposed wiring and connection diagram](Proposed%20wiring%20and%20connection%20diagram)
+- [System block diagram](System%20block%20diagram)
+- [Testing and results record](Testing%20and%20results%20record)
+- [Operation notes](How%20to%20work)
+- [Questions and answers](Question%20and%20Answers)
+- [Conveyor connection image](Conveyer%20%20connection.jpg)
 - [Logic image](<logics.jpg>)
 
 All links point to existing paths; no files need to be renamed for this README revision.
